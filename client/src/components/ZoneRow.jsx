@@ -255,29 +255,21 @@ export default function ZoneRow({
 
             {err && <p className="zr__err">{err}</p>}
             <div className="zr__actions">
-              {/* once a zone is up, the main action is "I ran it → restart the clock" */}
-              <button
-                className={`btn btn--sm${state === 'up' ? ' btn--primary' : ''}`}
-                disabled={busy}
-                onClick={() => run(() => onReset(zone, {}))}
-              >
-                {state === 'up' ? (
-                  <>
-                    <Check size={14} /> mark it done
-                  </>
-                ) : (
-                  <>
+              {state === 'up' ? (
+                /* zone is up — one action: mark it done, pick when it actually reset */
+                <button className="btn btn--sm btn--primary" disabled={busy} onClick={() => setBackdating(true)}>
+                  <Check size={14} /> mark it done&hellip;
+                </button>
+              ) : (
+                <>
+                  <button className="btn btn--sm" disabled={busy} onClick={() => run(() => onReset(zone, {}))}>
                     <RotateCcw size={14} /> it&rsquo;s up now
-                  </>
-                )}
-              </button>
-              <button
-                className={`btn btn--sm${state === 'up' ? '' : ' btn--primary'}`}
-                disabled={busy}
-                onClick={() => setBackdating(true)}
-              >
-                <Clock3 size={14} /> it came up earlier&hellip;
-              </button>
+                  </button>
+                  <button className="btn btn--sm btn--primary" disabled={busy} onClick={() => setBackdating(true)}>
+                    <Clock3 size={14} /> it came up earlier&hellip;
+                  </button>
+                </>
+              )}
               {claimedByMe ? (
                 <button className="btn btn--sm btn--ghost" disabled={busy} onClick={() => run(() => onUnclaim(zone))}>
                   release

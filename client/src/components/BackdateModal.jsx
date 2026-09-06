@@ -14,9 +14,7 @@ export default function BackdateModal({ zone, onClose, onSubmit }) {
     : clockIn(parsed.toISOString(), MANILA_TZ, Date.now());
   const sameZone = tzShort(LOCAL_TZ) === tzShort(MANILA_TZ);
 
-  async function submit(e) {
-    e.preventDefault();
-    const date = new Date(when);
+  async function log(date) {
     if (Number.isNaN(date.getTime())) {
       setErr('Pick a valid date and time.');
       return;
@@ -34,16 +32,30 @@ export default function BackdateModal({ zone, onClose, onSubmit }) {
       setBusy(false);
     }
   }
+  const submit = (e) => {
+    e.preventDefault();
+    log(new Date(when));
+  };
 
   return (
     <Modal title={`Log a reset — ${zone.name}`} onClose={onClose}>
       <form className="form" onSubmit={submit}>
         <p className="form__hint">
-          Use this when you saw the reset happen earlier and are logging it after the fact.
+          Hit <b>Just now</b> if it reset this moment, or set the time it actually came up.
         </p>
 
+        <button
+          type="button"
+          className="btn btn--wide"
+          disabled={busy}
+          onClick={() => log(new Date())}
+          style={{ marginBottom: 4 }}
+        >
+          {busy ? 'Logging…' : 'Just now'}
+        </button>
+
         <label className="field">
-          <span>When did it reset?  ·  your time ({tzShort(LOCAL_TZ)})</span>
+          <span>…or when did it reset?  ·  your time ({tzShort(LOCAL_TZ)})</span>
           <input
             type="datetime-local"
             value={when}
