@@ -262,14 +262,12 @@ export default function ZoneRow({
               <button className="btn btn--sm" disabled={busy} onClick={() => setBackdating(true)}>
                 <Clock3 size={14} /> earlier&hellip;
               </button>
-            </div>
-            <div className="zr__actions">
               {claimedByMe ? (
-                <button className="btn btn--sm btn--ghost" disabled={busy} onClick={() => run(() => onUnclaim(zone))}>
+                <button className="btn btn--sm btn--ghost zr__act-split" disabled={busy} onClick={() => run(() => onUnclaim(zone))}>
                   release
                 </button>
               ) : (
-                <button className="btn btn--sm" disabled={busy} onClick={() => run(() => onClaim(zone))}>
+                <button className="btn btn--sm zr__act-split" disabled={busy} onClick={() => run(() => onClaim(zone))}>
                   <Hand size={14} /> {zone.claimed_by ? 'take over' : "I'm on it"}
                 </button>
               )}

@@ -658,8 +658,11 @@ button {
   text-transform: uppercase;
   color: var(--text-faint);
 }
-.zr__actions { display: flex; flex-wrap: wrap; gap: 7px; }
-.zr__actions + .zr__actions { margin-top: 7px; }
+.zr__actions { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.zr__actions .zr__act-split { margin-left: auto; }
+@media (max-width: 560px) {
+  .zr__actions .zr__act-split { margin-left: 0; }
+}
 
 .zr__swipehint {
   position: absolute;
