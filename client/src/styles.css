@@ -71,6 +71,29 @@ button {
   background: rgba(63, 214, 196, 0.28);
 }
 
+/* thin black scrollbars (#111 so the thumb stays traceable on the black body) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #111 transparent;
+}
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #111;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #222;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 .term {
   max-width: 1160px;
   margin: 0 auto;
