@@ -1509,6 +1509,15 @@ body[data-density='compact'] .zrow__bar { margin-top: 3px; }
   text-transform: uppercase;
   color: var(--text-bright);
 }
+.chlog { padding: 6px 16px 16px; max-height: 62vh; overflow-y: auto; }
+.chlog__e { padding: 14px 0; border-top: 1px solid var(--rule); }
+.chlog__e:first-child { border-top: 0; }
+.chlog__h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 7px; }
+.chlog__h h3 { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-bright); }
+.chlog__h time { font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); margin-left: auto; }
+.chlog__e ul { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 5px; }
+.chlog__e li { font-size: 12.5px; color: var(--text-dim); line-height: 1.45; }
+
 .form {
   display: flex;
   flex-direction: column;

@@ -15,12 +15,14 @@ import {
   Search,
   Settings,
   SlidersHorizontal,
+  Sparkles,
   Star,
   UserCog,
   Users,
   X,
 } from 'lucide-react';
 import { api } from './api.js';
+import { CHANGELOG } from './changelog.js';
 import ZoneRow from './components/ZoneRow.jsx';
 import AuthScreen from './components/AuthScreen.jsx';
 import Wallboard from './components/Wallboard.jsx';
@@ -31,6 +33,7 @@ import ProfileModal from './components/ProfileModal.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
 import BoardSettingsModal from './components/BoardSettingsModal.jsx';
 import ActivityModal from './components/ActivityModal.jsx';
+import ChangelogModal from './components/ChangelogModal.jsx';
 import QuickLogModal from './components/QuickLogModal.jsx';
 import BackdateModal from './components/BackdateModal.jsx';
 import Avatar from './components/Avatar.jsx';
@@ -130,6 +133,14 @@ export default function App() {
   const [pasting, setPasting] = useState(false);
   const [activity, setActivity] = useState([]);
   const [activityOpen, setActivityOpen] = useState(false);
+  const [changelogOpen, setChangelogOpen] = useState(false);
+  const [changelogSeen, setChangelogSeen] = useState(() => lsGet('oh-changelog-seen', ''));
+  const latestChange = CHANGELOG[0]?.date || '';
+  const openChangelog = useCallback(() => {
+    setChangelogOpen(true);
+    setChangelogSeen(latestChange);
+    lsSet('oh-changelog-seen', latestChange);
+  }, [latestChange]);
   const [quickLogOpen, setQuickLogOpen] = useState(false);
   const [quickLogZone, setQuickLogZone] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -628,6 +639,10 @@ export default function App() {
           <button className="lnav__i" title="Wallboard" aria-label="Wallboard" onClick={() => setWallboard(true)}>
             <Maximize2 size={18} />
           </button>
+          <button className="lnav__i" title="What's new" aria-label="What's new" onClick={openChangelog}>
+            <Sparkles size={18} />
+            {changelogSeen !== latestChange && <span className="badge" />}
+          </button>
           <div className="menu" style={{ position: 'relative' }} ref={menuRef}>
             <button
               className={`lnav__i${menuOpen ? ' is-on' : ''}`}
@@ -1080,6 +1095,7 @@ export default function App() {
       {settingsOpen && user && (
         <SettingsModal me={user} zones={zones} onClose={() => setSettingsOpen(false)} onMeChange={setUser} />
       )}
+      {changelogOpen && <ChangelogModal onClose={() => setChangelogOpen(false)} />}
       {activityOpen && (
         <ActivityModal
           items={activity}
