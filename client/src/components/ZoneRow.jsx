@@ -256,7 +256,7 @@ export default function ZoneRow({
             {err && <p className="zr__err">{err}</p>}
             <div className="zr__actions">
               <button className="btn btn--sm btn--primary" disabled={busy} onClick={() => setBackdating(true)}>
-                <Clock3 size={14} /> log a time
+                <Clock3 size={14} /> it came up earlier&hellip;
               </button>
               <button className="btn btn--sm" disabled={busy} onClick={() => run(() => onReset(zone, {}))}>
                 <RotateCcw size={14} /> it&rsquo;s up now
