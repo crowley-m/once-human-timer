@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Modal from './Modal.jsx';
 import { LOCAL_TZ, MANILA_TZ, clockIn, tzShort, toLocalInputValue } from '../time.js';
 
-export default function BackdateModal({ zone, onClose, onSubmit }) {
+export default function BackdateModal({ zone, onClose, onSubmit, nowLabel = 'Just now' }) {
   const [when, setWhen] = useState(toLocalInputValue(new Date()));
   const [by, setBy] = useState('');
   const [busy, setBusy] = useState(false);
@@ -41,17 +41,17 @@ export default function BackdateModal({ zone, onClose, onSubmit }) {
     <Modal title={`Log a reset — ${zone.name}`} onClose={onClose}>
       <form className="form" onSubmit={submit}>
         <p className="form__hint">
-          Hit <b>Just now</b> if it reset this moment, or set the time it actually came up.
+          Hit <b>{nowLabel}</b> if it reset this moment, or set the time it actually came up.
         </p>
 
         <button
           type="button"
-          className="btn btn--wide"
+          className="btn btn--wide btn--primary"
           disabled={busy}
           onClick={() => log(new Date())}
           style={{ marginBottom: 4 }}
         >
-          {busy ? 'Logging…' : 'Just now'}
+          {busy ? 'Logging…' : nowLabel}
         </button>
 
         <label className="field">
@@ -79,8 +79,8 @@ export default function BackdateModal({ zone, onClose, onSubmit }) {
 
         <div className="form__actions">
           <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn btn--primary" disabled={busy}>
-            {busy ? 'Logging…' : 'Log reset'}
+          <button type="submit" className="btn" disabled={busy}>
+            {busy ? 'Logging…' : 'Log that time'}
           </button>
         </div>
       </form>

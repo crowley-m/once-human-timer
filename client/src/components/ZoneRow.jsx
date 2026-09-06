@@ -302,6 +302,7 @@ export default function ZoneRow({
       {backdating && (
         <BackdateModal
           zone={zone}
+          nowLabel={state === 'up' ? 'Mark it done' : 'Just now'}
           onClose={() => setBackdating(false)}
           onSubmit={async (payload) => {
             await onReset(zone, payload);
