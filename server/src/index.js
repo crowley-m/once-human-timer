@@ -115,6 +115,7 @@ const LEAD_MIN = Number.isFinite(+process.env.DISCORD_LEAD_MINUTES)
   ? +process.env.DISCORD_LEAD_MINUTES
   : 5; // "heads up" this many minutes before a zone is due; 0 = off
 const APP_ID = process.env.DISCORD_APP_ID || null; // needed to register the /up slash command
+const GUILD_ID = process.env.DISCORD_GUILD_ID || null; // register /up to one server (instant) vs global (~1h)
 const CLAN_TZ = process.env.DISCORD_CLAN_TZ || process.env.CLAN_TZ || 'Asia/Manila';
 
 function toDiscord(text, { ping = false, kind = 'reminder' } = {}) {
@@ -257,29 +258,33 @@ function learnAlias(phrase, zoneName) {
   metaSet.run('learned_aliases', JSON.stringify(l));
 }
 
-/** Register the /up slash command (idempotent — safe to call every boot). */
+/** Register the /up slash command (idempotent — safe to call every boot).
+ *  With DISCORD_GUILD_ID set it registers to that server (instant); otherwise
+ *  it registers globally (can take up to an hour to show up in Discord). */
 async function registerCommands() {
   if (!BOT_TOKEN || !APP_ID) return;
   const choices = getAll.all().slice(0, 25).map((z) => ({
     name: z.name.slice(0, 100),
     value: String(z.id),
   }));
-  const ok = await discordApi('PUT', `/applications/${APP_ID}/commands`, [
-    {
-      name: 'up',
-      description: 'Log a rift reset — when a zone just came up',
-      options: [
-        { type: 3, name: 'zone', description: 'Which zone', required: true, choices },
-        {
-          type: 3,
-          name: 'time',
-          description: 'When it came up: 3:50pm, 15:50, or "now" (default: now)',
-          required: false,
-        },
-      ],
-    },
-  ]);
-  if (ok) console.log('discord: /up command registered');
+  const cmd = {
+    name: 'up',
+    description: 'Log a rift reset — when a zone just came up',
+    options: [
+      { type: 3, name: 'zone', description: 'Which zone', required: true, choices },
+      {
+        type: 3,
+        name: 'time',
+        description: 'When it came up: 3:50pm, 15:50, or "now" (default: now)',
+        required: false,
+      },
+    ],
+  };
+  const path = GUILD_ID
+    ? `/applications/${APP_ID}/guilds/${GUILD_ID}/commands`
+    : `/applications/${APP_ID}/commands`;
+  const ok = await discordApi('PUT', path, [cmd]);
+  if (ok) console.log(`discord: /up command registered (${GUILD_ID ? `guild ${GUILD_ID}` : 'global — may take ~1h'})`);
 }
 
 function verifyDiscordSig(req) {
