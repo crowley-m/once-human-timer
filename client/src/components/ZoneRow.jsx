@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronDown, Clock3, Hand, Pencil, RotateCcw, Star, StickyNote, X } from 'lucide-react';
+import { Check, ChevronDown, Clock3, Hand, Pencil, Star, StickyNote, X } from 'lucide-react';
 import { dualClock, elapsedMinutesSince, formatDuration } from '../time.js';
 import { api } from '../api.js';
 import BackdateModal from './BackdateModal.jsx';
@@ -254,22 +254,16 @@ export default function ZoneRow({
             )}
 
             {err && <p className="zr__err">{err}</p>}
+            <p className="zr__loglbl">log when this zone last reset</p>
             <div className="zr__actions">
-              {state === 'up' ? (
-                /* zone is up — one action: mark it done, pick when it actually reset */
-                <button className="btn btn--sm btn--primary" disabled={busy} onClick={() => setBackdating(true)}>
-                  <Check size={14} /> mark it done&hellip;
-                </button>
-              ) : (
-                <>
-                  <button className="btn btn--sm" disabled={busy} onClick={() => run(() => onReset(zone, {}))}>
-                    <RotateCcw size={14} /> it&rsquo;s up now
-                  </button>
-                  <button className="btn btn--sm btn--primary" disabled={busy} onClick={() => setBackdating(true)}>
-                    <Clock3 size={14} /> it came up earlier&hellip;
-                  </button>
-                </>
-              )}
+              <button className="btn btn--sm btn--primary" disabled={busy} onClick={() => run(() => onReset(zone, {}))}>
+                <Check size={14} /> just now
+              </button>
+              <button className="btn btn--sm" disabled={busy} onClick={() => setBackdating(true)}>
+                <Clock3 size={14} /> earlier&hellip;
+              </button>
+            </div>
+            <div className="zr__actions">
               {claimedByMe ? (
                 <button className="btn btn--sm btn--ghost" disabled={busy} onClick={() => run(() => onUnclaim(zone))}>
                   release
@@ -302,7 +296,6 @@ export default function ZoneRow({
       {backdating && (
         <BackdateModal
           zone={zone}
-          nowLabel={state === 'up' ? 'Mark it done' : 'Just now'}
           onClose={() => setBackdating(false)}
           onSubmit={async (payload) => {
             await onReset(zone, payload);

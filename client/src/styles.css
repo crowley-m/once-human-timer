@@ -651,7 +651,15 @@ button {
 }
 .zr__lead button.is-on { color: var(--amber); border-color: var(--amber-line); }
 .zr__err { margin: 0 0 8px; font-size: 12px; color: var(--ember); }
+.zr__loglbl {
+  margin: 0 0 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
 .zr__actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.zr__actions + .zr__actions { margin-top: 7px; }
 
 .zr__swipehint {
   position: absolute;

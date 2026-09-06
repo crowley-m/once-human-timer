@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Clock3, RotateCcw } from 'lucide-react';
+import { Check, Clock3 } from 'lucide-react';
 import Modal from './Modal.jsx';
 import { dualClock, elapsedMinutesSince, formatDuration } from '../time.js';
 
@@ -45,7 +45,8 @@ export default function QuickLogModal({ zones, viewerTz, now, onLogNow, onLogTim
           onChange={(e) => setQ(e.target.value)}
         />
         <p className="form__hint">
-          Pick a zone, then say it&rsquo;s up now or set the time your clan reported.
+          Pick a zone, then <b>just now</b> if it reset this moment, or <b>earlier…</b> for a time
+          your clan called out.
         </p>
         <div className="qlog__list">
           {groups.length === 0 && <p className="panel__empty">no match</p>}
@@ -58,11 +59,11 @@ export default function QuickLogModal({ zones, viewerTz, now, onLogNow, onLogTim
                     <span className="t">{z.name}</span>
                     <span className="qlog__st">{statusOf(z)}</span>
                   </div>
-                  <button className="btn btn--sm" onClick={() => onLogTime(z)}>
-                    <Clock3 size={13} /> time
-                  </button>
                   <button className="btn btn--sm btn--primary" onClick={() => onLogNow(z)}>
-                    <RotateCcw size={13} /> up now
+                    <Check size={13} /> just now
+                  </button>
+                  <button className="btn btn--sm" onClick={() => onLogTime(z)}>
+                    <Clock3 size={13} /> earlier&hellip;
                   </button>
                 </div>
               ))}
