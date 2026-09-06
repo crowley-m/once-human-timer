@@ -1,0 +1,13 @@
+# /etc/systemd/system/oh-poll.timer
+# sudo systemctl enable --now oh-poll.timer
+
+[Unit]
+Description=Run the Discord poll every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

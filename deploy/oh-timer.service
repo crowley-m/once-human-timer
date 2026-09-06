@@ -1,0 +1,24 @@
+# /etc/systemd/system/oh-timer.service
+# sudo systemctl daemon-reload && sudo systemctl enable --now oh-timer
+
+[Unit]
+Description=Once Human rift timer API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=oh
+WorkingDirectory=/opt/rift-timer/server
+ExecStart=/usr/bin/node src/index.js
+EnvironmentFile=/opt/rift-timer/server/.env
+Restart=always
+RestartSec=3
+# harden
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/rift-timer/server
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

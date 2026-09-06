@@ -1,0 +1,25 @@
+# Reverse proxy + automatic HTTPS for the rift timer.
+# Put this at /etc/caddy/Caddyfile (or import it), then: sudo systemctl reload caddy
+#
+# Replace timers.example.com with your domain (A record -> the VPS IP).
+
+timers.example.com {
+	encode zstd gzip
+
+	# the Node server serves both the API and the built client
+	reverse_proxy 127.0.0.1:3001 {
+		header_up X-Forwarded-Proto https
+	}
+
+	# small hardening
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		-Server
+	}
+
+	log {
+		output file /var/log/caddy/timers.log
+		format console
+	}
+}

@@ -1,0 +1,33 @@
+# Polls the clan reset-log channel every 5 minutes and updates the timer board.
+# No server to host — GitHub runs it on a schedule for free.
+# Requires the timer API to be reachable from the public internet.
+#
+# Set these repo secrets (Settings -> Secrets and variables -> Actions):
+#   DISCORD_TOKEN      bot token
+#   WATCH_CHANNEL_ID   channel id(s), comma-separated
+#   API_URL           e.g. https://your-host/api
+#   API_SECRET        must match API_KEY on the server (optional but recommended)
+name: discord-poll
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: bot
+      - run: node src/poll.js
+        working-directory: bot
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          WATCH_CHANNEL_ID: ${{ secrets.WATCH_CHANNEL_ID }}
+          API_URL: ${{ secrets.API_URL }}
+          API_SECRET: ${{ secrets.API_SECRET }}
+          POLL_WINDOW_MINUTES: '12'

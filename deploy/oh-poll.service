@@ -1,0 +1,13 @@
+# /etc/systemd/system/oh-poll.service   (paired with oh-poll.timer)
+# One-shot: read the Discord channel and update the board, then exit.
+
+[Unit]
+Description=Once Human timer — Discord poll
+After=oh-timer.service
+
+[Service]
+Type=oneshot
+User=oh
+WorkingDirectory=/opt/rift-timer/bot
+ExecStart=/usr/bin/node src/poll.js
+EnvironmentFile=/opt/rift-timer/bot/.env

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+server/data.sqlite
+server/data.sqlite-shm
+server/data.sqlite-wal
+server/.env
+bot/.env
+*.tgz
+.DS_Store
