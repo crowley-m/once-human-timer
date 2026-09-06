@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Clock3, Hand, Pencil, RotateCcw, Star, StickyNote, X } from 'lucide-react';
+import { Check, ChevronDown, Clock3, Hand, Pencil, RotateCcw, Star, StickyNote, X } from 'lucide-react';
 import { dualClock, elapsedMinutesSince, formatDuration } from '../time.js';
 import { api } from '../api.js';
 import BackdateModal from './BackdateModal.jsx';
@@ -255,11 +255,28 @@ export default function ZoneRow({
 
             {err && <p className="zr__err">{err}</p>}
             <div className="zr__actions">
-              <button className="btn btn--sm btn--primary" disabled={busy} onClick={() => setBackdating(true)}>
-                <Clock3 size={14} /> it came up earlier&hellip;
+              {/* once a zone is up, the main action is "I ran it → restart the clock" */}
+              <button
+                className={`btn btn--sm${state === 'up' ? ' btn--primary' : ''}`}
+                disabled={busy}
+                onClick={() => run(() => onReset(zone, {}))}
+              >
+                {state === 'up' ? (
+                  <>
+                    <Check size={14} /> mark it done
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw size={14} /> it&rsquo;s up now
+                  </>
+                )}
               </button>
-              <button className="btn btn--sm" disabled={busy} onClick={() => run(() => onReset(zone, {}))}>
-                <RotateCcw size={14} /> it&rsquo;s up now
+              <button
+                className={`btn btn--sm${state === 'up' ? '' : ' btn--primary'}`}
+                disabled={busy}
+                onClick={() => setBackdating(true)}
+              >
+                <Clock3 size={14} /> it came up earlier&hellip;
               </button>
               {claimedByMe ? (
                 <button className="btn btn--sm btn--ghost" disabled={busy} onClick={() => run(() => onUnclaim(zone))}>
