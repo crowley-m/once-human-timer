@@ -926,6 +926,15 @@ app.post('/api/zones/:id/reset', requireAuth, (req, res) => {
     resetAt = d.toISOString();
   }
 
+  // no-op re-log (the Discord poll re-scans the same messages every run) — don't
+  // write another history row or fire another activity event; just report it.
+  if (
+    zone.last_reset_at &&
+    Math.abs(Date.parse(zone.last_reset_at) - Date.parse(resetAt)) <= 60_000
+  ) {
+    return res.json({ ...decorate(zone), changed: false });
+  }
+
   const rawBy = actorName(req, by);
   const who = req.user
     ? req.user.display_name || req.user.username
@@ -945,7 +954,7 @@ app.post('/api/zones/:id/reset', requireAuth, (req, res) => {
       (out.elapsed_minutes != null ? ` — up ${resetAtWord(out)}` : ''),
     { kind: 'action' }
   );
-  res.json(out);
+  res.json({ ...out, changed: true });
 });
 
 function resetAtWord(z) {

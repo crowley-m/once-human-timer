@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronDown, Clock3, Hand, Pencil, Star, StickyNote, X } from 'lucide-react';
+import { Check, ChevronDown, Clock3, Hand, Pencil, Star, StickyNote, TrendingUp, X } from 'lucide-react';
 import { dualClock, elapsedMinutesSince, formatDuration } from '../time.js';
 import { api } from '../api.js';
 import BackdateModal from './BackdateModal.jsx';
@@ -111,9 +111,10 @@ export default function ZoneRow({
     zone.last_reset_note || (zone.last_reset_by ? `logged by ${zone.last_reset_by}` : null);
 
   const obs = zone.observed_minutes;
+  const obsRounded = obs ? Math.round(obs / 5) * 5 : null;
   const cyclePattern =
     obs && hasInterval && Math.abs(obs - zone.interval_minutes) >= 3
-      ? `clan's logs run a ~${formatDuration(obs)} cycle`
+      ? `clan's logs run a ~${formatDuration(obs)} cycle, not ${formatDuration(zone.interval_minutes)}`
       : null;
   const effLead = zoneLead != null ? zoneLead : defaultLead;
 
@@ -212,8 +213,22 @@ export default function ZoneRow({
                   {claimAge && claimAge !== 'now' ? `, ${claimAge}` : ''}
                 </>
               )}
-              {cyclePattern && <span className="zr__pat"> · {cyclePattern}</span>}
             </p>
+
+            {cyclePattern && (
+              <p className="zr__drift">
+                <TrendingUp size={12} /> {cyclePattern}
+                {isAdmin && obsRounded && obsRounded !== zone.interval_minutes && (
+                  <button
+                    className="zr__driftbtn"
+                    disabled={busy}
+                    onClick={() => run(() => onUpdate(zone.id, { interval_minutes: obsRounded }))}
+                  >
+                    set cycle to {formatDuration(obsRounded)}
+                  </button>
+                )}
+              </p>
+            )}
 
             {zone.note && (
               <p className="zr__note">
