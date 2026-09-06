@@ -45,8 +45,8 @@ export default function QuickLogModal({ zones, viewerTz, now, onLogNow, onLogTim
           onChange={(e) => setQ(e.target.value)}
         />
         <p className="form__hint">
-          Pick a zone, then <b>just now</b> if it reset this moment, or <b>earlier…</b> for a time
-          your clan called out.
+          Pick a zone, then <b>done</b> if it reset this moment, or <b>set time</b> for a time your
+          clan called out.
         </p>
         <div className="qlog__list">
           {groups.length === 0 && <p className="panel__empty">no match</p>}
@@ -60,10 +60,10 @@ export default function QuickLogModal({ zones, viewerTz, now, onLogNow, onLogTim
                     <span className="qlog__st">{statusOf(z)}</span>
                   </div>
                   <button className="btn btn--sm btn--primary" onClick={() => onLogNow(z)}>
-                    <Check size={13} /> just now
+                    <Check size={13} /> done
                   </button>
                   <button className="btn btn--sm" onClick={() => onLogTime(z)}>
-                    <Clock3 size={13} /> earlier&hellip;
+                    <Clock3 size={13} /> set time
                   </button>
                 </div>
               ))}

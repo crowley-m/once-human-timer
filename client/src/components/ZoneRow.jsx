@@ -272,10 +272,10 @@ export default function ZoneRow({
             <p className="zr__loglbl">log when this zone last reset</p>
             <div className="zr__actions">
               <button className="btn btn--sm btn--primary" disabled={busy} onClick={() => run(() => onReset(zone, {}))}>
-                <Check size={14} /> just now
+                <Check size={14} /> Mark it done
               </button>
               <button className="btn btn--sm" disabled={busy} onClick={() => setBackdating(true)}>
-                <Clock3 size={14} /> earlier&hellip;
+                <Clock3 size={14} /> Manually set time
               </button>
               {claimedByMe ? (
                 <button className="btn btn--sm btn--ghost zr__act-split" disabled={busy} onClick={() => run(() => onUnclaim(zone))}>

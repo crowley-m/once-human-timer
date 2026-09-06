@@ -806,7 +806,7 @@ export default function App() {
               </p>
               <ul>
                 <li>
-                  <b>Tap a zone</b> to open it, then <b>just now</b> or <b>earlier…</b> to log its reset.
+                  <b>Tap a zone</b> to open it, then <b>Mark it done</b> or <b>Manually set time</b>.
                 </li>
                 <li>
                   Or hit <b>＋ Log a reset</b> (top left) to pick any zone from a list.
