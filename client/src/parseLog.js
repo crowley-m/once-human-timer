@@ -210,9 +210,10 @@ export function parseLog(text, roster, fallbackAnchorMs = Date.now()) {
         const hh = +tm[1];
         const mm = +tm[2];
         if (hh > 23 || mm > 59) continue;
-        resetAt = resolveNear(anchor, hh, mm, tm[3] ? tm[3].toLowerCase() : null) - intervalMs;
+        // the clock time = when the zone was collected / reset
+        resetAt = resolveNear(anchor, hh, mm, tm[3] ? tm[3].toLowerCase() : null);
       } else {
-        resetAt = Date.now() - intervalMs;
+        resetAt = Date.now() - intervalMs; // "open" with no time = available now
       }
       out.push({
         zone: c.zone,

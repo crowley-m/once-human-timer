@@ -21,11 +21,11 @@ export async function getLearned() {
   }
 }
 
-export async function reportUnclear({ line, candidates, up_at, phrase }) {
+export async function reportUnclear({ line, candidates, reset_at, phrase }) {
   const r = await fetch(`${BASE}/discord/unclear`, {
     method: 'POST',
     headers: headers(),
-    body: JSON.stringify({ line, candidates, up_at, phrase }),
+    body: JSON.stringify({ line, candidates, reset_at, phrase }),
   });
   if (!r.ok) throw new Error(`POST unclear -> ${r.status} ${await r.text()}`);
   return r.json();

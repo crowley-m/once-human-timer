@@ -159,14 +159,20 @@ export function parseMessage(content, msgDate, roster, learnedOverride = null) {
     const tm = line.match(TIME_RE);
     if (!tm && !isOpen) continue;
 
-    // the wall-clock time on the line (for teach-on-unclear forwarding), and the
-    // likeliest zone word (so a click can learn the spelling)
-    let upAt = null;
+    // A clock time in chat = when the zone was collected / reset (the next window
+    // is a full cycle after it). "open" / "up" with no time = it's available right
+    // now. `resetMs` is null when there's no usable time on the line.
+    let resetMs = null;
+    let badTime = false;
     if (tm) {
       const h = +tm[1];
       const mn = +tm[2];
-      if (!(h > 23 || mn > 59)) upAt = new Date(resolveNear(msgDate, h, mn, tm[3] ? tm[3].toLowerCase() : null)).toISOString();
+      if (h > 23 || mn > 59) badTime = true;
+      else resetMs = Math.min(resolveNear(msgDate, h, mn, tm[3] ? tm[3].toLowerCase() : null), Date.now());
     }
+    if (badTime) continue;
+    const resetIso = resetMs != null ? new Date(resetMs).toISOString() : null;
+    // likeliest zone word (so a teach click can learn the spelling)
     const phrase =
       line
         .split(' ')
@@ -181,7 +187,7 @@ export function parseMessage(content, msgDate, roster, learnedOverride = null) {
           line: rawLine.trim(),
           reason: 'no confident zone match',
           candidates: cand(scored),
-          up_at: upAt,
+          reset_at: resetIso,
           phrase,
         });
       continue;
@@ -218,7 +224,7 @@ export function parseMessage(content, msgDate, roster, learnedOverride = null) {
         line: rawLine.trim(),
         reason: `could be ${band.slice(0, 3).map((s) => s.zone.name).join(' or ')}`,
         candidates: cand(band),
-        up_at: upAt,
+        reset_at: resetIso,
         phrase,
       });
       continue;
@@ -226,15 +232,8 @@ export function parseMessage(content, msgDate, roster, learnedOverride = null) {
 
     for (const c of chosen) {
       const intervalMs = (c.zone.interval_minutes ?? 60) * 60000;
-      let resetAt;
-      if (tm) {
-        const hh = +tm[1];
-        const mm = +tm[2];
-        if (hh > 23 || mm > 59) continue;
-        resetAt = resolveNear(msgDate, hh, mm, tm[3] ? tm[3].toLowerCase() : null) - intervalMs;
-      } else {
-        resetAt = Date.now() - intervalMs;
-      }
+      // clock time -> that's the reset; no time ("open") -> reset was a cycle ago
+      const resetAt = resetMs != null ? resetMs : Date.now() - intervalMs;
       results.push({
         zone: c.zone,
         resetAt: new Date(Math.min(resetAt, Date.now())).toISOString(),

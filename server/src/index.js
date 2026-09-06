@@ -269,13 +269,13 @@ async function registerCommands() {
   }));
   const cmd = {
     name: 'up',
-    description: 'Log a rift reset — when a zone just came up',
+    description: 'Log a rift reset — when a zone was cleared',
     options: [
       { type: 3, name: 'zone', description: 'Which zone', required: true, choices },
       {
         type: 3,
         name: 'time',
-        description: 'When it came up: 3:50pm, 15:50, or "now" (default: now)',
+        description: 'When it was cleared: 3:50pm, 15:50, or "now" (default: now)',
         required: false,
       },
     ],
@@ -766,8 +766,9 @@ app.post('/api/discord/interactions', (req, res) => {
     const at = parseClanTime(opts.time);
     if (at == null) return eph(`Couldn't read the time "${opts.time}". Try "3:50pm", "15:50", or "now".`);
 
+    // the time given is when the zone was collected / reset
     const interval = (zone.interval_minutes ?? 60) * 60000;
-    const resetAtIso = new Date(Math.min(at - interval, Date.now())).toISOString();
+    const resetAtIso = new Date(Math.min(at, Date.now())).toISOString();
     applyReset(zone, resetAtIso, {
       who,
       source: 'discord',
@@ -821,9 +822,8 @@ app.post('/api/discord/interactions', (req, res) => {
       const stamp = Number(mt[2]);
       const phrase = decodeURIComponent(mt[3] || '');
       if (!zone) return eph('That zone no longer exists.');
-      const interval = (zone.interval_minutes ?? 60) * 60000;
-      const base = stamp || Date.now();
-      const resetAtIso = new Date(Math.min(base - interval, Date.now())).toISOString();
+      // stamp = the reset moment the poll parsed off the line (0 = none → now)
+      const resetAtIso = new Date(Math.min(stamp || Date.now(), Date.now())).toISOString();
       applyReset(zone, resetAtIso, { who, source: 'discord', note: 'placed via Discord' });
       if (phrase) learnAlias(phrase, zone.name);
       return res.json({
@@ -850,13 +850,13 @@ app.post('/api/discord/interactions', (req, res) => {
 
 // The poll bot posts here when it can't confidently place a line.
 app.post('/api/discord/unclear', requireAuth, (req, res) => {
-  const { line, up_at, phrase, candidates } = req.body || {};
+  const { line, reset_at, phrase, candidates } = req.body || {};
   if (!line || !Array.isArray(candidates) || candidates.length === 0) {
     return res.status(400).json({ error: 'need line + candidates' });
   }
   if (!((BOT_TOKEN && CHANNEL_ID) || WEBHOOK)) return res.json({ ok: false, reason: 'no discord channel' });
 
-  const stamp = up_at ? Date.parse(up_at) || 0 : 0;
+  const stamp = reset_at ? Date.parse(reset_at) || 0 : 0;
   const ph = encodeURIComponent(String(phrase || '').toLowerCase().slice(0, 32));
   const buttons = candidates.slice(0, 4).map((c) => ({
     type: 2,

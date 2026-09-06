@@ -2,6 +2,15 @@
 // `date` is just for display + "unseen" ordering; bump it when you add an entry.
 export const CHANGELOG = [
   {
+    date: '2026-09-07',
+    title: 'Times mean “when it was cleared”',
+    items: [
+      'A time in chat (or in /up) is now read as when the zone was collected — the next window is a full cycle after it, not from that time',
+      'Fixes zones showing overdue right after someone logged a fresh clear',
+      '“open” / “up” with no time still means “available right now”',
+    ],
+  },
+  {
     date: '2026-09-06',
     title: 'Discord bot does more',
     items: [

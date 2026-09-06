@@ -73,13 +73,16 @@ npm start          # keep alive with pm2 / systemd / a screen session
 
 ## How a message becomes a timer
 
-`FURNACE RED 6:00` posted ~04:00 Manila →
-matches **Furnace Lair** (red, 2h) → `6:00` is read as *next expected up* →
-stored last-reset = `06:00 − 2h = 04:00 Manila` → board shows `up in ~2h`.
+`FURNACE RED 6:00` posted ~06:05 Manila →
+matches **Furnace Lair** (red, 2h) → `6:00` is read as *when it was cleared* →
+stored last-reset = `06:00 Manila` → board shows `up in ~2h` (next window 08:00).
 
+- A clock time = **when the zone was collected / reset**. The next window is a
+  full cycle after it.
 - Times are read as **clan-tz 12-hour** (`CLAN_TZ`, default `Asia/Manila`),
-  AM/PM inferred from when the message was sent.
-- `open` / `up now` → treated as available right now.
+  AM/PM inferred from when the message was sent; resolved to the occurrence
+  closest to the message.
+- `open` / `up now` with **no** time → treated as available right now.
 
 ## Misspellings
 
