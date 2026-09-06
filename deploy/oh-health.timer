@@ -1,0 +1,13 @@
+# /etc/systemd/system/oh-health.timer
+# sudo systemctl enable --now oh-health.timer
+
+[Unit]
+Description=Ping the Once Human timer API every 2 minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=2min
+AccuracySec=20s
+
+[Install]
+WantedBy=timers.target

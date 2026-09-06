@@ -220,6 +220,14 @@ export default function App() {
     api.activity().then(setActivity).catch(() => {});
   }, []);
 
+  const [loggers, setLoggers] = useState([]);
+  const loadLoggers = useCallback(() => {
+    api.contributors(7).then((r) => setLoggers(r.contributors || [])).catch(() => {});
+  }, []);
+  useEffect(() => {
+    loadLoggers();
+  }, [loadLoggers]);
+
   const menuRef = useRef(null);
   useEffect(() => {
     if (!menuOpen) return;
@@ -247,9 +255,11 @@ export default function App() {
     onActivity: (item) => {
       setActivity((a) => [item, ...a].slice(0, 60));
       if (item.by_name && item.by_name !== meNameRef.current) toast(`${item.by_name} logged ${item.zone}`);
+      loadLoggers();
     },
     onActivityCleared: ({ timers } = {}) => {
       setActivity([]);
+      setLoggers([]);
       if (timers) load({ silent: true });
     },
     onResync: () => load({ silent: true }),
@@ -989,6 +999,26 @@ export default function App() {
             ))
           )}
         </section>
+
+        {loggers.length > 0 && (
+          <section className="box">
+            <div className="box__head">
+              <h2>Top loggers</h2>
+              <span className="m">7 days</span>
+            </div>
+            {loggers.slice(0, 6).map((c, i) => (
+              <div className="lg" key={c.name}>
+                <span className="lg__rank">{i + 1}</span>
+                <Avatar name={c.name} size={20} />
+                <span className="lg__n">{c.name === user?.display_name ? 'You' : c.name}</span>
+                <span className="lg__c">
+                  {c.count}
+                  {c.via_discord > 0 && <em> · {c.via_discord} via Discord</em>}
+                </span>
+              </div>
+            ))}
+          </section>
+        )}
 
         <section className="box">
           <div className="box__head">

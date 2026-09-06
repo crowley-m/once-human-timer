@@ -1,0 +1,12 @@
+# /etc/systemd/system/oh-backup.service   (paired with oh-backup.timer)
+# One-shot: write a gzipped SQLite snapshot to /opt/rift-timer/backups, keep last 14.
+
+[Unit]
+Description=Once Human timer — nightly DB backup
+
+[Service]
+Type=oneshot
+User=oh
+WorkingDirectory=/opt/rift-timer
+ExecStart=/usr/bin/env bash deploy/backup.sh
+Environment=NODE_BIN=/opt/node22/bin

@@ -8,5 +8,6 @@ server/.env
 bot/.env
 *.tgz
 .DS_Store
+backups/
 deploy_key
 deploy_key.pub

@@ -13,6 +13,7 @@ TGZ="$(mktemp -u).tgz"
 echo "==> packing"
 tar --exclude=node_modules --exclude=.git --exclude="server/.env" --exclude="bot/.env" \
     --exclude="server/data.sqlite*" --exclude="client/dist" --exclude="*.log" --exclude="*.tgz" \
+    --exclude=backups --exclude=".oh-health.down" \
     -czf "$TGZ" .
 
 echo "==> uploading to $VPS"

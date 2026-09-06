@@ -36,6 +36,7 @@ export const api = {
   deleteMe: (password) => request('/me', { method: 'DELETE', body: JSON.stringify({ password }) }),
   userProfile: (id) => request(`/users/${id}`),
   activity: () => request('/activity'),
+  contributors: (days = 7) => request(`/stats/contributors?days=${days}`),
   clearActivity: (alsoTimers) =>
     request(`/activity${alsoTimers ? '?timers=1' : ''}`, { method: 'DELETE' }),
 

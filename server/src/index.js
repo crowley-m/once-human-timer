@@ -485,6 +485,27 @@ app.get('/api/activity', (_req, res) => {
   res.json(rows);
 });
 
+// Who's been logging resets — leaderboard over the last N days (default 7).
+app.get('/api/stats/contributors', (req, res) => {
+  const days = Math.min(Math.max(Number(req.query.days) || 7, 1), 90);
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+  const rows = db
+    .prepare(
+      `SELECT COALESCE(NULLIF(TRIM(r.by_name), ''), 'someone') AS name,
+              r.user_id,
+              COUNT(*) AS count,
+              SUM(CASE WHEN r.source = 'discord' THEN 1 ELSE 0 END) AS via_discord,
+              MAX(r.created_at) AS last_at
+       FROM resets r
+       WHERE r.created_at >= ?
+       GROUP BY name
+       ORDER BY count DESC, last_at DESC
+       LIMIT 20`
+    )
+    .all(since);
+  res.json({ days, total: rows.reduce((n, r) => n + r.count, 0), contributors: rows });
+});
+
 // Admin: wipe the reset history (activity feed + per-zone "came up" list + observed
 // cycle). ?timers=1 also blanks every zone's current timer.
 app.delete('/api/activity', requireAdmin, (req, res) => {

@@ -262,3 +262,31 @@ resets, the board config, and the VAPID push keypair all survive every update.
 - **Web-push**: no config needed. The server auto-generates a VAPID keypair on first
   boot and stores it in the `meta` table. `web-push` is a normal npm dependency
   (pure JS) pulled in by `npm ci`.
+
+## Nightly DB backup
+
+`deploy/backup.sh` writes a gzipped `VACUUM INTO` snapshot to `/opt/rift-timer/backups/`
+(WAL-safe, keeps the last 14). Install the timer once:
+
+```bash
+cp /opt/rift-timer/deploy/oh-backup.{service,timer} /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now oh-backup.timer
+systemctl start oh-backup.service        # run one now
+ls -la /opt/rift-timer/backups/
+```
+
+Restore: `gunzip -c backups/data-YYYYMMDD-HHMMSS.sqlite.gz > server/data.sqlite`
+(stop `oh-timer` first, remove `data.sqlite-wal`/`-shm`, then start it).
+
+## "Server down" alert
+
+`deploy/healthcheck.sh` pings `localhost:3010/api/board` and posts to Discord on a
+down→up transition (no repeat spam). It reuses `DISCORD_WEBHOOK_URL` from
+`server/.env`, or set `DISCORD_ALERT_WEBHOOK_URL=` there for a separate channel.
+
+```bash
+cp /opt/rift-timer/deploy/oh-health.{service,timer} /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now oh-health.timer
+```

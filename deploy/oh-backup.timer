@@ -1,0 +1,13 @@
+# /etc/systemd/system/oh-backup.timer
+# sudo systemctl enable --now oh-backup.timer
+
+[Unit]
+Description=Nightly Once Human timer DB backup
+
+[Timer]
+OnCalendar=*-*-* 19:15:00 UTC
+Persistent=true
+AccuracySec=5min
+
+[Install]
+WantedBy=timers.target

@@ -744,6 +744,13 @@ button {
 .ar__x b { color: var(--text-bright); font-weight: 500; }
 .ar__x em { font-style: normal; font-family: var(--mono); font-size: 10.5px; color: var(--text-dim); display: block; margin-top: 1px; }
 
+.lg { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid var(--rule); font-size: 12.5px; }
+.lg:first-child { border-top: 0; }
+.lg__rank { font-family: var(--mono); font-size: 11px; color: var(--text-faint); width: 12px; text-align: right; flex: none; }
+.lg__n { color: var(--text-bright); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lg__c { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--text-dim); white-space: nowrap; flex: none; }
+.lg__c em { font-style: normal; color: var(--text-faint); }
+
 .act__admin {
   display: flex;
   flex-wrap: wrap;

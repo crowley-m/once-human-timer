@@ -1,0 +1,13 @@
+# /etc/systemd/system/oh-health.service   (paired with oh-health.timer)
+# One-shot: ping the API, alert Discord on a down/up transition.
+
+[Unit]
+Description=Once Human timer — health check
+
+[Service]
+Type=oneshot
+User=oh
+WorkingDirectory=/opt/rift-timer
+ExecStart=/usr/bin/env bash deploy/healthcheck.sh
+Environment=HEALTH_STATE=/opt/rift-timer/.oh-health.down
+SuccessExitStatus=1
