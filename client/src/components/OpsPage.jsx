@@ -37,6 +37,11 @@ export default function OpsPage({ zones, onBack }) {
   const [zoneId, setZoneId] = useState('');
   const [when, setWhen] = useState(toLocalInputValue(new Date()));
 
+  const [pollQ, setPollQ] = useState('');
+  const [pollOpts, setPollOpts] = useState(['Yes', 'No']);
+  const [polls, setPolls] = useState([]);
+  const loadPolls = () => api.polls().then((r) => setPolls(r.polls || [])).catch(() => {});
+
   useEffect(() => {
     api
       .ops()
@@ -49,6 +54,9 @@ export default function OpsPage({ zones, onBack }) {
   useEffect(() => {
     if (sortedZones.length && !zoneId) setZoneId(String(sortedZones[0].id));
   }, [sortedZones, zoneId]);
+  useEffect(() => {
+    loadPolls();
+  }, []);
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onBack();
     window.addEventListener('keydown', onKey);
@@ -109,8 +117,27 @@ export default function OpsPage({ zones, onBack }) {
     }
   }
 
+  async function postPoll() {
+    const q = pollQ.trim();
+    const opts = pollOpts.map((o) => o.trim()).filter(Boolean);
+    if (!q || opts.length < 2) return toast.error('need a question and 2+ options');
+    setBusy(true);
+    try {
+      await api.discordPoll(q, opts);
+      toast.success('Poll posted');
+      setPollQ('');
+      setPollOpts(['Yes', 'No']);
+      loadPolls();
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const d = data?.discord;
   const canPost = d?.canPost;
+  const canButtons = d?.bot && d?.channel;
   const chips = d
     ? [
         ['bot token', d.bot],
@@ -281,6 +308,83 @@ export default function OpsPage({ zones, onBack }) {
               label="Mirror every website reset to the webhook"
               hint="chatty"
             />
+          </section>
+
+          {/* ask the clan */}
+          <section className="opx__card">
+            <h2>Ask the clan</h2>
+            {!canButtons && <p className="opx__warn">Needs a bot token + channel id (voting buttons).</p>}
+            <div className="opx__field">
+              <span>Question</span>
+              <input
+                type="text"
+                placeholder="e.g. Is the bot working well?"
+                value={pollQ}
+                maxLength={240}
+                onChange={(e) => setPollQ(e.target.value)}
+                disabled={!canButtons}
+              />
+            </div>
+            <div className="opx__field">
+              <span>Options</span>
+              {pollOpts.map((o, i) => (
+                <div key={i} className="opx__inline">
+                  <input
+                    type="text"
+                    value={o}
+                    maxLength={60}
+                    placeholder={`option ${i + 1}`}
+                    onChange={(e) => setPollOpts((a) => a.map((x, j) => (j === i ? e.target.value : x)))}
+                    disabled={!canButtons}
+                    style={{ width: 'auto', flex: '1 1 auto' }}
+                  />
+                  {pollOpts.length > 2 && (
+                    <button
+                      className="opx__x"
+                      onClick={() => setPollOpts((a) => a.filter((_, j) => j !== i))}
+                      aria-label="remove option"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+              {pollOpts.length < 5 && (
+                <button className="opx__addopt" onClick={() => setPollOpts((a) => [...a, ''])} disabled={!canButtons}>
+                  + option
+                </button>
+              )}
+            </div>
+            <div className="opx__actions">
+              <span className="opx__grow" />
+              <button className="btn btn--sm btn--primary" disabled={busy || !canButtons} onClick={postPoll}>
+                Post poll
+              </button>
+            </div>
+
+            {polls.length > 0 && (
+              <div className="opx__polls">
+                {polls.slice(0, 4).map((p) => (
+                  <div key={p.id} className="opx__poll">
+                    <b>{p.question}</b>
+                    {p.options.map((o, i) => {
+                      const pct = p.total ? Math.round((p.counts[i] / p.total) * 100) : 0;
+                      return (
+                        <div key={i} className="opx__pbar">
+                          <span className="opx__pbar-l">{o}</span>
+                          <span className="opx__pbar-track">
+                            <span className="opx__pbar-fill" style={{ width: `${pct}%` }} />
+                          </span>
+                          <span className="opx__pbar-n">{p.counts[i]}</span>
+                        </div>
+                      );
+                    })}
+                    <em>{p.total} vote{p.total === 1 ? '' : 's'}</em>
+                  </div>
+                ))}
+                <button className="opx__addopt" onClick={loadPolls}>refresh tallies</button>
+              </div>
+            )}
           </section>
 
           {/* chat poll */}

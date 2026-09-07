@@ -597,6 +597,81 @@ app.post('/api/admin/discord/post-board', requireAdmin, (_req, res) => {
   res.json({ ok: true });
 });
 
+// ---- clan polls (question + buttons in Discord) ----------------------------
+function listPollIds() {
+  try {
+    return JSON.parse(metaGet.get('polls_index')?.v || '[]');
+  } catch {
+    return [];
+  }
+}
+function getPoll(id) {
+  try {
+    return JSON.parse(metaGet.get(`poll:${id}`)?.v || 'null');
+  } catch {
+    return null;
+  }
+}
+function savePoll(p) {
+  metaSet.run(`poll:${p.id}`, JSON.stringify(p));
+  const idx = [p.id, ...listPollIds().filter((x) => x !== p.id)].slice(0, 20);
+  metaSet.run('polls_index', JSON.stringify(idx));
+}
+function pollTally(p) {
+  const counts = p.options.map(() => 0);
+  for (const i of Object.values(p.votes || {})) if (counts[i] != null) counts[i]++;
+  return { counts, total: Object.keys(p.votes || {}).length };
+}
+function pollBody(p) {
+  const { counts, total } = pollTally(p);
+  const lines = p.options.map((o, i) => {
+    const filled = total ? Math.round((counts[i] / total) * 10) : 0;
+    return `${'█'.repeat(filled)}${'░'.repeat(10 - filled)} ${counts[i]}  ${o}`;
+  });
+  return `📊 **${p.question}**\n${lines.join('\n')}\n_${total} vote${total === 1 ? '' : 's'} · tap to vote_`;
+}
+function pollComponents(p) {
+  const btns = p.options.map((o, i) => ({
+    type: 2,
+    style: 2,
+    label: o.slice(0, 80),
+    custom_id: `poll:${p.id}:${i}`,
+  }));
+  const rows = [];
+  for (let i = 0; i < btns.length; i += 5) rows.push({ type: 1, components: btns.slice(i, i + 5) });
+  return rows;
+}
+
+app.get('/api/admin/polls', requireAdmin, (_req, res) => {
+  const polls = listPollIds()
+    .map(getPoll)
+    .filter(Boolean)
+    .map((p) => ({ id: p.id, question: p.question, options: p.options, created_at: p.created_at, ...pollTally(p) }));
+  res.json({ polls });
+});
+
+app.post('/api/admin/discord/poll', requireAdmin, async (req, res) => {
+  if (!(BOT_TOKEN && CHANNEL_ID)) {
+    return res.status(400).json({ error: 'polls need a bot token + channel id (buttons)' });
+  }
+  const question = String(req.body?.question || '').trim().slice(0, 240);
+  let options = Array.isArray(req.body?.options) && req.body.options.length ? req.body.options : ['Yes', 'No'];
+  options = options.map((o) => String(o || '').trim().slice(0, 60)).filter(Boolean).slice(0, 5);
+  if (!question) return res.status(400).json({ error: 'question is empty' });
+  if (options.length < 2) return res.status(400).json({ error: 'need at least 2 options' });
+
+  const p = { id: crypto.randomUUID().slice(0, 8), question, options, votes: {}, created_at: nowIso() };
+  const msg = await discordApi('POST', `/channels/${CHANNEL_ID}/messages`, {
+    content: pollBody(p),
+    components: pollComponents(p),
+    allowed_mentions: { parse: [] },
+  });
+  if (!msg?.id) return res.status(502).json({ error: 'Discord rejected the poll message' });
+  p.message_id = msg.id;
+  savePoll(p);
+  res.json({ ok: true, poll: { ...p, ...pollTally(p) } });
+});
+
 // Admin: wipe the reset history (activity feed + per-zone "came up" list + observed
 // cycle). ?timers=1 also blanks every zone's current timer.
 app.delete('/api/activity', requireAdmin, (req, res) => {
@@ -929,6 +1004,24 @@ app.post('/api/discord/interactions', (req, res) => {
       return res.json({
         type: 7,
         data: { content: `${body.message?.content || ''}\n· ignored by ${who}`, components: [], allowed_mentions: { parse: [] } },
+      });
+    }
+
+    // clan poll vote
+    const mv = cid.match(/^poll:([a-z0-9]+):(\d+)$/i);
+    if (mv) {
+      const p = getPoll(mv[1]);
+      if (!p) return eph('That poll is closed.');
+      const idx = Number(mv[2]);
+      if (idx < 0 || idx >= p.options.length) return eph('Unknown option.');
+      const uid = u.id;
+      if (!uid) return eph('Could not read who you are.');
+      p.votes = p.votes || {};
+      p.votes[uid] = idx;
+      savePoll(p);
+      return res.json({
+        type: 7,
+        data: { content: pollBody(p), components: pollComponents(p), allowed_mentions: { parse: [] } },
       });
     }
 

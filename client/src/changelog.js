@@ -3,12 +3,12 @@
 export const CHANGELOG = [
   {
     date: '2026-09-07',
-    title: 'Bot & ops panel (admin)',
+    title: 'Bot & ops page (admin)',
     items: [
-      'Send a message to the clan channel as the bot; post a board snapshot',
+      'Its own page at /#/ops — send a message as the bot, post a board snapshot',
+      'Ask the clan — post a question with Yes/No (or custom) voting buttons, see the tally',
       'Log a reset for any zone at any time from one place',
-      'Switch the Discord reminders and the chat poll on/off',
-      'Tune which zone types get reminders, the heads-up lead, and auto-clear',
+      'Switch the Discord reminders and the chat poll on/off; tune types, lead, auto-clear',
     ],
   },
   {

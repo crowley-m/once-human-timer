@@ -46,6 +46,9 @@ export const api = {
   discordSay: (content, ping) =>
     request('/admin/discord/say', { method: 'POST', body: JSON.stringify({ content, ping: !!ping }) }),
   discordPostBoard: () => request('/admin/discord/post-board', { method: 'POST' }),
+  polls: () => request('/admin/polls'),
+  discordPoll: (question, options) =>
+    request('/admin/discord/poll', { method: 'POST', body: JSON.stringify({ question, options }) }),
 
   // board
   boardFull: () => request('/board/full'),
