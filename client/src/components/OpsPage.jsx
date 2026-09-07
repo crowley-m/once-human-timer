@@ -369,13 +369,17 @@ export default function OpsPage({ zones, onBack }) {
                     <b>{p.question}</b>
                     {p.options.map((o, i) => {
                       const pct = p.total ? Math.round((p.counts[i] / p.total) * 100) : 0;
+                      const who = p.breakdown?.[i] || [];
                       return (
-                        <div key={i} className="opx__pbar">
-                          <span className="opx__pbar-l">{o}</span>
-                          <span className="opx__pbar-track">
-                            <span className="opx__pbar-fill" style={{ width: `${pct}%` }} />
-                          </span>
-                          <span className="opx__pbar-n">{p.counts[i]}</span>
+                        <div key={i} className="opx__prow">
+                          <div className="opx__pbar">
+                            <span className="opx__pbar-l">{o}</span>
+                            <span className="opx__pbar-track">
+                              <span className="opx__pbar-fill" style={{ width: `${pct}%` }} />
+                            </span>
+                            <span className="opx__pbar-n">{p.counts[i]}</span>
+                          </div>
+                          {who.length > 0 && <div className="opx__pwho">{who.join(', ')}</div>}
                         </div>
                       );
                     })}

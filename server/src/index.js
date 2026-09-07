@@ -622,6 +622,14 @@ function pollTally(p) {
   for (const i of Object.values(p.votes || {})) if (counts[i] != null) counts[i]++;
   return { counts, total: Object.keys(p.votes || {}).length };
 }
+function pollBreakdown(p) {
+  const names = p.names || {};
+  return p.options.map((_, i) =>
+    Object.entries(p.votes || {})
+      .filter(([, idx]) => idx === i)
+      .map(([uid]) => names[uid] || 'someone')
+  );
+}
 function pollBody(p) {
   const { counts, total } = pollTally(p);
   const lines = p.options.map((o, i) => {
@@ -646,7 +654,14 @@ app.get('/api/admin/polls', requireAdmin, (_req, res) => {
   const polls = listPollIds()
     .map(getPoll)
     .filter(Boolean)
-    .map((p) => ({ id: p.id, question: p.question, options: p.options, created_at: p.created_at, ...pollTally(p) }));
+    .map((p) => ({
+      id: p.id,
+      question: p.question,
+      options: p.options,
+      created_at: p.created_at,
+      ...pollTally(p),
+      breakdown: pollBreakdown(p),
+    }));
   res.json({ polls });
 });
 
@@ -1017,7 +1032,9 @@ app.post('/api/discord/interactions', (req, res) => {
       const uid = u.id;
       if (!uid) return eph('Could not read who you are.');
       p.votes = p.votes || {};
+      p.names = p.names || {};
       p.votes[uid] = idx;
+      p.names[uid] = who;
       savePoll(p);
       return res.json({
         type: 7,
