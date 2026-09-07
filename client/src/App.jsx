@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   LogOut,
   Maximize2,
+  Megaphone,
   Plus,
   RefreshCw,
   RotateCcw,
@@ -32,6 +33,7 @@ import PasteLogModal from './components/PasteLogModal.jsx';
 import ProfileModal from './components/ProfileModal.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
 import BoardSettingsModal from './components/BoardSettingsModal.jsx';
+import OpsModal from './components/OpsModal.jsx';
 import ActivityModal from './components/ActivityModal.jsx';
 import ChangelogModal from './components/ChangelogModal.jsx';
 import QuickLogModal from './components/QuickLogModal.jsx';
@@ -118,6 +120,7 @@ export default function App() {
   const [viewProfile, setViewProfile] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [boardSettingsOpen, setBoardSettingsOpen] = useState(false);
+  const [opsOpen, setOpsOpen] = useState(false);
   const [zones, setZones] = useState([]);
   const [loadState, setLoadState] = useState('loading');
   const [error, setError] = useState(null);
@@ -676,6 +679,9 @@ export default function App() {
                       <button className="menu__item" onClick={() => { setBoardSettingsOpen(true); setMenuOpen(false); }}>
                         <Users size={15} /> Board &amp; members
                       </button>
+                      <button className="menu__item" onClick={() => { setOpsOpen(true); setMenuOpen(false); }}>
+                        <Megaphone size={15} /> Bot &amp; ops
+                      </button>
                       <button className="menu__item" onClick={() => { setAdding(true); setMenuOpen(false); }}>
                         <Plus size={15} /> Add zone
                       </button>
@@ -1134,6 +1140,7 @@ export default function App() {
           }}
         />
       )}
+      {opsOpen && isAdmin && <OpsModal zones={zones} onClose={() => setOpsOpen(false)} />}
       {boardSettingsOpen && isAdmin && (
         <BoardSettingsModal
           me={user}

@@ -5,13 +5,13 @@
 // recomputes the same reset time.
 import 'dotenv/config';
 import { parseMessage } from './parse.js';
-import { loadRoster, logReset, getLearned, reportUnclear } from './api.js';
+import { loadRoster, logReset, getLearned, getBotConfig, reportUnclear } from './api.js';
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CHANNELS = (process.env.WATCH_CHANNEL_ID || '').split(',').map((s) => s.trim()).filter(Boolean);
 const WINDOW_MIN = Number(process.env.POLL_WINDOW_MINUTES || 12);
 const DRY = /^(1|true)$/i.test(process.env.DRY_RUN || '');
-const CONFIRM = !/^(0|false|no)$/i.test(process.env.CONFIRM_LOGS || ''); // reply in-channel with what got logged
+let CONFIRM = !/^(0|false|no)$/i.test(process.env.CONFIRM_LOGS || ''); // reply in-channel with what got logged
 const CLAN_TZ = process.env.CLAN_TZ || 'Asia/Manila';
 const upFmt = new Intl.DateTimeFormat('en-US', { timeZone: CLAN_TZ, hour: 'numeric', minute: '2-digit', hour12: true });
 const upWord = (r) =>
@@ -43,6 +43,13 @@ async function discordPost(path, body) {
   if (!r.ok) throw new Error(`Discord POST ${path} -> ${r.status} ${await r.text()}`);
   return r.json();
 }
+
+const cfg = await getBotConfig();
+if (cfg.pollEnabled === false) {
+  console.log('poll is switched off in the ops panel — exiting');
+  process.exit(0);
+}
+if (cfg.confirmLogs !== undefined) CONFIRM = cfg.confirmLogs;
 
 const roster = await loadRoster();
 const learned = await getLearned();

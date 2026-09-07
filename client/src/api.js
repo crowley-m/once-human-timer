@@ -40,6 +40,13 @@ export const api = {
   clearActivity: (alsoTimers) =>
     request(`/activity${alsoTimers ? '?timers=1' : ''}`, { method: 'DELETE' }),
 
+  // ops panel (admin)
+  ops: () => request('/admin/ops'),
+  updateOps: (patch) => request('/admin/ops', { method: 'PATCH', body: JSON.stringify(patch) }),
+  discordSay: (content, ping) =>
+    request('/admin/discord/say', { method: 'POST', body: JSON.stringify({ content, ping: !!ping }) }),
+  discordPostBoard: () => request('/admin/discord/post-board', { method: 'POST' }),
+
   // board
   boardFull: () => request('/board/full'),
   updateBoard: (patch) => request('/board', { method: 'PATCH', body: JSON.stringify(patch) }),

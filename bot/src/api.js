@@ -21,6 +21,15 @@ export async function getLearned() {
   }
 }
 
+export async function getBotConfig() {
+  try {
+    const r = await fetch(`${BASE}/config`);
+    return r.ok ? await r.json() : {};
+  } catch {
+    return {};
+  }
+}
+
 export async function reportUnclear({ line, candidates, reset_at, phrase }) {
   const r = await fetch(`${BASE}/discord/unclear`, {
     method: 'POST',

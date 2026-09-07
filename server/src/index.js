@@ -107,20 +107,40 @@ const WEBHOOK = process.env.DISCORD_WEBHOOK_URL || null;
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || null;
 const CHANNEL_ID = process.env.DISCORD_CHANNEL_ID || null;
 const PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY || null;
-const ANNOUNCE_TYPES = new Set(
-  (process.env.DISCORD_ANNOUNCE_TYPES || 'red_card,elite').split(',').map((s) => s.trim())
-);
-const MIRROR_ACTIONS = /^(1|true)$/i.test(process.env.DISCORD_MIRROR_ACTIONS || '');
-const LEAD_MIN = Number.isFinite(+process.env.DISCORD_LEAD_MINUTES)
-  ? +process.env.DISCORD_LEAD_MINUTES
-  : 5; // "heads up" this many minutes before a zone is due; 0 = off
 const APP_ID = process.env.DISCORD_APP_ID || null; // needed to register the /up slash command
 const GUILD_ID = process.env.DISCORD_GUILD_ID || null; // register /up to one server (instant) vs global (~1h)
 const CLAN_TZ = process.env.DISCORD_CLAN_TZ || process.env.CLAN_TZ || 'Asia/Manila';
 
+// Runtime-tunable settings — env vars are the defaults, the admin ops panel
+// overrides them (stored as one JSON blob in `meta.runtime_config`).
+const CFG_DEFAULTS = {
+  announceTypes: (process.env.DISCORD_ANNOUNCE_TYPES || 'red_card,elite')
+    .split(',').map((s) => s.trim()).filter(Boolean),
+  leadMinutes: Number.isFinite(+process.env.DISCORD_LEAD_MINUTES) ? +process.env.DISCORD_LEAD_MINUTES : 5,
+  expireFactor: Number.isFinite(+process.env.STALE_EXPIRE_FACTOR) ? +process.env.STALE_EXPIRE_FACTOR : 4,
+  mirrorActions: /^(1|true)$/i.test(process.env.DISCORD_MIRROR_ACTIONS || ''),
+  remindersEnabled: true, // the "up now" / heads-up Discord posts
+  pollEnabled: true, // the chat-reading poll (bot checks this and exits if false)
+  confirmLogs: true, // the poll's "✅ logged from chat" reply
+};
+function getConfig() {
+  let saved = {};
+  try {
+    saved = JSON.parse(metaGet.get('runtime_config')?.v || '{}');
+  } catch {
+    /* ignore */
+  }
+  return { ...CFG_DEFAULTS, ...saved };
+}
+function setConfig(patch) {
+  const next = { ...getConfig(), ...patch };
+  metaSet.run('runtime_config', JSON.stringify(next));
+  return next;
+}
+
 function toDiscord(text, { ping = false, kind = 'reminder' } = {}) {
   if (!WEBHOOK) return;
-  if (kind === 'action' && !MIRROR_ACTIONS) return; // reset/claim mirrors are opt-in
+  if (kind === 'action' && !getConfig().mirrorActions) return; // reset/claim mirrors are opt-in
   fetch(WEBHOOK, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -166,7 +186,7 @@ function sendChannel(content, { ping = false, components } = {}) {
 /** "heads up" a few minutes before a zone is due. No buttons (you can't collect it yet). */
 function announceSoon(zoneList) {
   const names = zoneList.map((z) => `**${z.name}**`).join(', ');
-  sendChannel(`⏳ up in ~${LEAD_MIN} min — ${names}`, { ping: false });
+  sendChannel(`⏳ up in ~${getConfig().leadMinutes} min — ${names}`, { ping: false });
 }
 
 /** The "up now" reminder. With a bot token: a row per zone — "Got it" logs the
@@ -506,6 +526,77 @@ app.get('/api/stats/contributors', (req, res) => {
   res.json({ days, total: rows.reduce((n, r) => n + r.count, 0), contributors: rows });
 });
 
+// ---------------------------------------------------------------------------
+// Ops panel (admin only) — tune the bot, send messages, flip switches
+// ---------------------------------------------------------------------------
+// The poll reads this to know whether to run and whether to confirm in chat.
+app.get('/api/config', (_req, res) => {
+  const c = getConfig();
+  res.json({ pollEnabled: c.pollEnabled, confirmLogs: c.confirmLogs });
+});
+
+app.get('/api/admin/ops', requireAdmin, (_req, res) => {
+  res.json({
+    config: getConfig(),
+    discord: {
+      webhook: !!WEBHOOK,
+      bot: !!BOT_TOKEN,
+      channel: !!CHANNEL_ID,
+      interactions: !!PUBLIC_KEY,
+      slashCommand: !!(BOT_TOKEN && APP_ID),
+      clanTz: CLAN_TZ,
+      canPost: !!((BOT_TOKEN && CHANNEL_ID) || WEBHOOK),
+    },
+  });
+});
+
+app.patch('/api/admin/ops', requireAdmin, (req, res) => {
+  const b = req.body || {};
+  const patch = {};
+  if (Array.isArray(b.announceTypes)) {
+    patch.announceTypes = [...new Set(b.announceTypes.filter((t) => VALID_TYPES.has(t)))];
+  }
+  const clampNum = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(+v) || 0));
+  if (b.leadMinutes !== undefined) patch.leadMinutes = clampNum(b.leadMinutes, 0, 120);
+  if (b.expireFactor !== undefined) patch.expireFactor = clampNum(b.expireFactor, 0, 50);
+  for (const k of ['mirrorActions', 'remindersEnabled', 'pollEnabled', 'confirmLogs']) {
+    if (b[k] !== undefined) patch[k] = !!b[k];
+  }
+  res.json(setConfig(patch));
+});
+
+// Send a message to the Discord channel as the bot.
+app.post('/api/admin/discord/say', requireAdmin, (req, res) => {
+  const content = String(req.body?.content || '').trim().slice(0, 1800);
+  if (!content) return res.status(400).json({ error: 'message is empty' });
+  if (!((BOT_TOKEN && CHANNEL_ID) || WEBHOOK)) {
+    return res.status(400).json({ error: 'no Discord channel configured' });
+  }
+  sendChannel(content, { ping: !!req.body?.ping });
+  res.json({ ok: true });
+});
+
+// Post a board snapshot (up now + next few) to Discord.
+app.post('/api/admin/discord/post-board', requireAdmin, (_req, res) => {
+  if (!((BOT_TOKEN && CHANNEL_ID) || WEBHOOK)) {
+    return res.status(400).json({ error: 'no Discord channel configured' });
+  }
+  const now = Date.now();
+  const rows = getAll
+    .all()
+    .filter((z) => z.interval_minutes != null && z.last_reset_at)
+    .map((z) => ({ z, rem: z.interval_minutes - (now - Date.parse(z.last_reset_at)) / 60000 }))
+    .sort((a, b) => a.rem - b.rem);
+  const up = rows.filter((r) => r.rem <= 0 && -r.rem < r.z.interval_minutes * 2);
+  const soon = rows.filter((r) => r.rem > 0).slice(0, 6);
+  const fmt = (m) => (m >= 60 ? `${Math.floor(m / 60)}h${String(Math.round(m % 60)).padStart(2, '0')}` : `${Math.round(m)}m`);
+  const lines = [];
+  if (up.length) lines.push(`**up now:** ${up.map((r) => r.z.name).join(', ')}`);
+  for (const r of soon) lines.push(`• ${r.z.name} — up in ${fmt(r.rem)}`);
+  sendChannel(lines.length ? `📋 board\n${lines.join('\n')}` : '📋 board — nothing logged', { ping: false });
+  res.json({ ok: true });
+});
+
 // Admin: wipe the reset history (activity feed + per-zone "came up" list + observed
 // cycle). ?timers=1 also blanks every zone's current timer.
 app.delete('/api/activity', requireAdmin, (req, res) => {
@@ -548,14 +639,11 @@ app.post('/api/push/unsubscribe', requireAuth, (req, res) => {
 const pushedKeys = new Set(); // `${zoneId}:${endpoint}:${last_reset_at}:${bucket}`
 const announcedUp = new Map(); // zone id -> last_reset_at we already announced in Discord
 const warnedSoon = new Map(); // zone id -> last_reset_at we already sent a "heads up" for
-// Auto-blank a zone once it's this many intervals overdue — the "expected reset"
-// is meaningless by then and stale rows are just noise. 0 = never expire.
-const EXPIRE_FACTOR = Number.isFinite(+process.env.STALE_EXPIRE_FACTOR)
-  ? +process.env.STALE_EXPIRE_FACTOR
-  : 4;
 
 setInterval(() => {
   const nowMs = Date.now();
+  const cfg = getConfig();
+  const announceSet = new Set(cfg.announceTypes);
 
   const zonesUp = getAll
     .all()
@@ -563,9 +651,9 @@ setInterval(() => {
     .map((z) => ({ z, upAt: new Date(z.last_reset_at).getTime() + z.interval_minutes * 60000 }));
 
   // --- auto-expire long-dead timers -----------------------------------
-  if (EXPIRE_FACTOR > 0) {
+  if (cfg.expireFactor > 0) {
     for (const { z, upAt } of zonesUp) {
-      if (nowMs - upAt > z.interval_minutes * EXPIRE_FACTOR * 60000) {
+      if (nowMs - upAt > z.interval_minutes * cfg.expireFactor * 60000) {
         db.prepare(
           'UPDATE zones SET last_reset_at = NULL, last_reset_by = NULL, last_reset_note = NULL, claimed_by = NULL, claimed_at = NULL WHERE id = ?'
         ).run(z.id);
@@ -574,13 +662,13 @@ setInterval(() => {
     }
   }
 
-  // --- (0) Discord "heads up" — zone due in ~LEAD_MIN --------------------
-  if (LEAD_MIN > 0) {
+  // --- (0) Discord "heads up" — zone due in ~leadMinutes ----------------
+  if (cfg.remindersEnabled && cfg.leadMinutes > 0) {
     const soon = zonesUp.filter(
       ({ z, upAt }) =>
-        ANNOUNCE_TYPES.has(z.type) &&
+        announceSet.has(z.type) &&
         upAt - nowMs > 0 &&
-        upAt - nowMs <= LEAD_MIN * 60000 &&
+        upAt - nowMs <= cfg.leadMinutes * 60000 &&
         warnedSoon.get(z.id) !== z.last_reset_at
     );
     if (soon.length) {
@@ -591,13 +679,15 @@ setInterval(() => {
   }
 
   // --- (1) Discord "it's up" reminder ------------------------------------
-  const justUp = zonesUp.filter(
-    ({ z, upAt }) =>
-      ANNOUNCE_TYPES.has(z.type) &&
-      nowMs >= upAt &&
-      nowMs < upAt + 3 * 60000 && // within 3 min of going up
-      announcedUp.get(z.id) !== z.last_reset_at
-  );
+  const justUp = cfg.remindersEnabled
+    ? zonesUp.filter(
+        ({ z, upAt }) =>
+          announceSet.has(z.type) &&
+          nowMs >= upAt &&
+          nowMs < upAt + 3 * 60000 && // within 3 min of going up
+          announcedUp.get(z.id) !== z.last_reset_at
+      )
+    : [];
   if (justUp.length) {
     for (const { z } of justUp) announcedUp.set(z.id, z.last_reset_at);
     announceUp(justUp.map(({ z }) => z));

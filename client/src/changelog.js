@@ -3,6 +3,16 @@
 export const CHANGELOG = [
   {
     date: '2026-09-07',
+    title: 'Bot & ops panel (admin)',
+    items: [
+      'Send a message to the clan channel as the bot; post a board snapshot',
+      'Log a reset for any zone at any time from one place',
+      'Switch the Discord reminders and the chat poll on/off',
+      'Tune which zone types get reminders, the heads-up lead, and auto-clear',
+    ],
+  },
+  {
+    date: '2026-09-07',
     title: 'Times mean “when it was cleared”',
     items: [
       'A time in chat (or in /up) is now read as when the zone was collected — the next window is a full cycle after it, not from that time',
