@@ -33,7 +33,7 @@ import PasteLogModal from './components/PasteLogModal.jsx';
 import ProfileModal from './components/ProfileModal.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
 import BoardSettingsModal from './components/BoardSettingsModal.jsx';
-import OpsModal from './components/OpsModal.jsx';
+import OpsPage from './components/OpsPage.jsx';
 import ActivityModal from './components/ActivityModal.jsx';
 import ChangelogModal from './components/ChangelogModal.jsx';
 import QuickLogModal from './components/QuickLogModal.jsx';
@@ -120,7 +120,7 @@ export default function App() {
   const [viewProfile, setViewProfile] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [boardSettingsOpen, setBoardSettingsOpen] = useState(false);
-  const [opsOpen, setOpsOpen] = useState(false);
+  const [route, setRoute] = useState(() => (typeof window !== 'undefined' ? window.location.hash : ''));
   const [zones, setZones] = useState([]);
   const [loadState, setLoadState] = useState('loading');
   const [error, setError] = useState(null);
@@ -224,6 +224,11 @@ export default function App() {
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    const onHash = () => setRoute(window.location.hash);
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
   }, []);
   useEffect(() => lsSet('oh-alerts', alertsOn ? '1' : '0'), [alertsOn]);
   useEffect(() => lsSet('oh-view', viewMode), [viewMode]);
@@ -532,6 +537,13 @@ export default function App() {
   if (wallboard) {
     return <Wallboard zones={zones} now={now} viewerTz={viewerTz} onExit={() => setWallboard(false)} />;
   }
+  if (route === '#/ops') {
+    if (user?.role !== 'admin') {
+      window.location.hash = '';
+      return null;
+    }
+    return <OpsPage zones={zones} onBack={() => { window.location.hash = ''; }} />;
+  }
 
   const clk = nowClockParts(now, viewerTz);
   const [clockH, clockM] = clk.hm.split(':');
@@ -679,7 +691,7 @@ export default function App() {
                       <button className="menu__item" onClick={() => { setBoardSettingsOpen(true); setMenuOpen(false); }}>
                         <Users size={15} /> Board &amp; members
                       </button>
-                      <button className="menu__item" onClick={() => { setOpsOpen(true); setMenuOpen(false); }}>
+                      <button className="menu__item" onClick={() => { window.location.hash = '#/ops'; setMenuOpen(false); }}>
                         <Megaphone size={15} /> Bot &amp; ops
                       </button>
                       <button className="menu__item" onClick={() => { setAdding(true); setMenuOpen(false); }}>
@@ -1140,7 +1152,6 @@ export default function App() {
           }}
         />
       )}
-      {opsOpen && isAdmin && <OpsModal zones={zones} onClose={() => setOpsOpen(false)} />}
       {boardSettingsOpen && isAdmin && (
         <BoardSettingsModal
           me={user}
